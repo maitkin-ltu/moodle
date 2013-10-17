@@ -230,10 +230,9 @@ if ($generalforums) {
                     $unreadlink = '<span class="read">0</span>';
                 }
 
-                if (($forum->trackingtype == FORUM_TRACKING_FORCED) && ($CFG->forum_allowforcedreadtracking)) {
+                if ($forum->trackingtype == FORUM_TRACKING_ON) {
                     $trackedlink = $stryes;
-                } else if ($forum->trackingtype === FORUM_TRACKING_OFF || ($USER->trackforums == 0)) {
-                    $trackedlink = '-';
+
                 } else {
                     $aurl = new moodle_url('/mod/forum/settracking.php', array('id'=>$forum->id));
                     if (!isset($untracked[$forum->id])) {
@@ -369,10 +368,9 @@ if ($course->id != SITEID) {    // Only real courses have learning forums
                         $unreadlink = '<span class="read">0</span>';
                     }
 
-                    if (($forum->trackingtype == FORUM_TRACKING_FORCED) && ($CFG->forum_allowforcedreadtracking)) {
+                    if ($forum->trackingtype == FORUM_TRACKING_ON) {
                         $trackedlink = $stryes;
-                    } else if ($forum->trackingtype === FORUM_TRACKING_OFF || ($USER->trackforums == 0)) {
-                        $trackedlink = '-';
+
                     } else {
                         $aurl = new moodle_url('/mod/forum/settracking.php', array('id'=>$forum->id));
                         if (!isset($untracked[$forum->id])) {

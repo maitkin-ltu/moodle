@@ -102,12 +102,6 @@ abstract class grade_report {
      */
     public $currentgroup;
 
-     /**
-      * The current groupname being displayed.
-      * @var string $currentgroupname
-      */
-    public $currentgroupname;
-
     /**
      * Current course group mode
      * @var int $groupmode
@@ -138,17 +132,6 @@ abstract class grade_report {
      */
     protected $groupwheresql_params = array();
 
-    /**
-     * An SQL constraint to append to the queries used by this object to build the report.
-     * @var string $userwheresql
-     */
-    protected $userwheresql;
-
-    /**
-     * The ordered params for $userwheresql
-     * @var array $userwheresql_params
-     */
-    protected $userwheresql_params = array();
 
     /**
      * Constructor. Sets local copies of user preferences and initialises grade_tree.
@@ -285,13 +268,11 @@ abstract class grade_report {
     /**
      * Fetches and returns a count of all the users that will be shown on this page.
      * @param boolean $groups include groups limit
-     * @param boolean $users include user limit - default false, used for searching purposes
      * @return int Count of users
      */
-    public function get_numusers($groups = true, $users = false) {
+    public function get_numusers($groups=true) {
         global $DB;
 
-        $userwheresql  = "";
         $groupsql      = "";
         $groupwheresql = "";
 
@@ -306,18 +287,13 @@ abstract class grade_report {
 
         $params = array_merge($gradebookrolesparams, $enrolledparams, $relatedctxparams);
 
-        if ($users) {
-            $userwheresql  = $this->userwheresql;
-            $params        = array_merge($params, $this->userwheresql_params);
-        }
-
         if ($groups) {
             $groupsql      = $this->groupsql;
             $groupwheresql = $this->groupwheresql;
             $params        = array_merge($params, $this->groupwheresql_params);
         }
 
-        $sql = "SELECT DISTINCT u.id
+        $countsql = "SELECT COUNT(DISTINCT u.id)
                        FROM {user} u
                        JOIN ($enrolledsql) je
                             ON je.id = u.id
@@ -326,29 +302,9 @@ abstract class grade_report {
                        $groupsql
                       WHERE ra.roleid $gradebookrolessql
                             AND u.deleted = 0
-                            $userwheresql
                             $groupwheresql
                             AND ra.contextid $relatedctxsql";
-        $selectedusers = $DB->get_records_sql($sql, $params);
-
-        $count = 0;
-        // Check if user's enrolment is active and should be displayed.
-        if (!empty($selectedusers)) {
-            $coursecontext = $this->context->get_course_context(true);
-
-            $useractiveenrolments = get_enrolled_users($coursecontext, '', 0, 'u.*',  null, 0, 0, true);
-
-            $defaultgradeshowactiveenrol = !empty($CFG->grade_report_showonlyactiveenrol);
-            $showonlyactiveenrol = get_user_preferences('grade_report_showonlyactiveenrol', $defaultgradeshowactiveenrol);
-            $showonlyactiveenrol = $showonlyactiveenrol || !has_capability('moodle/course:viewsuspendedusers', $coursecontext);
-
-            foreach ($selectedusers as $id => $value) {
-                if (!$showonlyactiveenrol || ($showonlyactiveenrol && array_key_exists($id, $useractiveenrolments))) {
-                    $count++;
-                }
-            }
-        }
-        return $count;
+        return $DB->count_records_sql($countsql, $params);
     }
 
     /**
@@ -365,31 +321,10 @@ abstract class grade_report {
             }
 
             if ($this->currentgroup) {
-                $group                      = groups_get_group($this->currentgroup);
-                $this->currentgroupname     = $group->name;
                 $this->groupsql             = " JOIN {groups_members} gm ON gm.userid = u.id ";
                 $this->groupwheresql        = " AND gm.groupid = :gr_grpid ";
                 $this->groupwheresql_params = array('gr_grpid'=>$this->currentgroup);
             }
-        }
-    }
-
-    /**
-     * Sets up this object's user variables to restrict the selection of users to display.
-     */
-    public function setup_users() {
-        global $SESSION, $DB;
-
-        $this->userwheresql = "";
-        $this->userwheresql_params = array();
-
-        if (isset($SESSION->gradereport['filterfirstname']) && !empty($SESSION->gradereport['filterfirstname'])) {
-            $this->userwheresql .= ' AND '.$DB->sql_like('u.firstname', ':firstname', false, false);
-            $this->userwheresql_params['firstname'] = $SESSION->gradereport['filterfirstname'].'%';
-        }
-        if (isset($SESSION->gradereport['filtersurname']) && !empty($SESSION->gradereport['filtersurname'])) {
-            $this->userwheresql .= ' AND '.$DB->sql_like('u.lastname', ':lastname', false, false);
-            $this->userwheresql_params['lastname'] = $SESSION->gradereport['filtersurname'].'%';
         }
     }
 

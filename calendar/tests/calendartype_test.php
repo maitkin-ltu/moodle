@@ -33,9 +33,6 @@ require_once($CFG->dirroot . '/calendar/tests/calendartype_test_example.php');
 require_once($CFG->libdir . '/form/dateselector.php');
 require_once($CFG->libdir . '/form/datetimeselector.php');
 
-// Used to test the calendar/lib.php functions.
-require_once($CFG->dirroot . '/calendar/lib.php');
-
 // Used to test the user datetime profile field.
 require_once($CFG->dirroot . '/user/profile/lib.php');
 require_once($CFG->dirroot . '/user/profile/definelib.php');
@@ -73,8 +70,8 @@ class core_calendar_type_testcase extends advanced_testcase {
         $this->resetAfterTest();
 
         // Test setting it as the 'Test' calendar type.
-        $this->set_calendar_type('test_example');
-        $this->assertEquals('test_example', \core_calendar\type_factory::get_calendar_type());
+        $this->set_calendar_type('test');
+        $this->assertEquals('test', \core_calendar\type_factory::get_calendar_type());
 
         // Test setting it as the 'Gregorian' calendar type.
         $this->set_calendar_type('gregorian');
@@ -93,7 +90,7 @@ class core_calendar_type_testcase extends advanced_testcase {
         $this->core_functions_test('gregorian');
 
         // Test that the core functions reproduce the same results as the test calendar.
-        $this->core_functions_test('test_example');
+        $this->core_functions_test('test');
     }
 
     /**
@@ -123,7 +120,7 @@ class core_calendar_type_testcase extends advanced_testcase {
         $date2['hour'] = 0; // The dateselector element does not have hours.
         $date2['minute'] = 0; // The dateselector element does not have minutes.
         $date2['timestamp'] = 1372896000;
-        $this->convert_dateselector_to_unixtime_test('dateselector', 'test_example', $date2);
+        $this->convert_dateselector_to_unixtime_test('dateselector', 'test', $date2);
 
         $date3 = array();
         $date3['day'] = 4;
@@ -141,12 +138,12 @@ class core_calendar_type_testcase extends advanced_testcase {
         $date4['hour'] = 1;
         $date4['minute'] = 17;
         $date4['timestamp'] = 1372979700;
-        $this->convert_dateselector_to_unixtime_test('datetimeselector', 'test_example', $date4);
+        $this->convert_dateselector_to_unixtime_test('datetimeselector', 'test', $date4);
 
         // The date selector element values are set by using the function usergetdate, here we want to check that
         // the unixtime passed is being successfully converted to the correct values for the calendar type.
         $this->convert_unixtime_to_dateselector_test('gregorian', $date3);
-        $this->convert_unixtime_to_dateselector_test('test_example', $date4);
+        $this->convert_unixtime_to_dateselector_test('test', $date4);
     }
 
     /**
@@ -169,7 +166,7 @@ class core_calendar_type_testcase extends advanced_testcase {
         // the year 1967 should be saved in the DB, as 1/1/1970 converts to 30/10/1967 in Gregorian.
         $date['expectedminyear'] = '1967';
         $date['expectedmaxyear'] = '2010';
-        $this->datetime_field_submission_test('test_example', $date);
+        $this->datetime_field_submission_test('test', $date);
     }
 
     /**
@@ -186,17 +183,6 @@ class core_calendar_type_testcase extends advanced_testcase {
         // Test the userdate function.
         $this->assertEquals($calendar->timestamp_to_date_string($this->user->timecreated, '', 99, true, true),
             userdate($this->user->timecreated));
-
-        // Test the calendar/lib.php functions.
-        $this->assertEquals($calendar->get_weekdays(), calendar_get_days());
-        $this->assertEquals($calendar->get_starting_weekday(), calendar_get_starting_weekday());
-        $this->assertEquals($calendar->get_num_days_in_month('1986', '9'), calendar_days_in_month('9', '1986'));
-        $this->assertEquals($calendar->get_next_month('1986', '9'), calendar_add_month('9', '1986'));
-        $this->assertEquals($calendar->get_prev_month('1986', '9'), calendar_sub_month('9', '1986'));
-
-        // Test the lib/moodle.php functions.
-        $this->assertEquals($calendar->get_num_days_in_month('1986', '9'), days_in_month('9', '1986'));
-        $this->assertEquals($calendar->get_weekday('1986', '9', '16'), dayofweek('16', '9', '1986'));
     }
 
     /**

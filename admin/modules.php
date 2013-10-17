@@ -5,6 +5,7 @@
     require_once('../course/lib.php');
     require_once($CFG->libdir.'/adminlib.php');
     require_once($CFG->libdir.'/tablelib.php');
+    require_once($CFG->libdir.'/pluginlib.php');
 
     // defines
     define('MODULE_TABLE','module_administration_table');
@@ -47,7 +48,7 @@
                                 FROM {course_modules}
                                WHERE visibleold=1 AND module=?)",
                 array($module->id));
-        core_plugin_manager::reset_caches();
+        plugin_manager::reset_caches();
         admin_get_root(true, false);  // settings not required - only pages
     }
 
@@ -64,7 +65,7 @@
                                 FROM {course_modules}
                                WHERE visible=1 AND module=?)",
                 array($module->id));
-        core_plugin_manager::reset_caches();
+        plugin_manager::reset_caches();
         admin_get_root(true, false);  // settings not required - only pages
     }
 
@@ -81,10 +82,10 @@
     // construct the flexible table ready to display
     $table = new flexible_table(MODULE_TABLE);
     $table->define_columns(array('name', 'instances', 'version', 'hideshow', 'uninstall', 'settings'));
-    $table->define_headers(array($stractivitymodule, $stractivities, $strversion, "$strhide/$strshow", $strsettings, $struninstall));
+    $table->define_headers(array($stractivitymodule, $stractivities, $strversion, "$strhide/$strshow", $struninstall, $strsettings));
     $table->define_baseurl($CFG->wwwroot.'/'.$CFG->admin.'/modules.php');
     $table->set_attribute('id', 'modules');
-    $table->set_attribute('class', 'admintable generaltable');
+    $table->set_attribute('class', 'generaltable');
     $table->setup();
 
     foreach ($modules as $module) {
@@ -100,7 +101,7 @@
         }
 
         $uninstall = '';
-        if ($uninstallurl = core_plugin_manager::instance()->get_uninstall_url('mod_'.$module->name, 'manage')) {
+        if ($uninstallurl = plugin_manager::instance()->get_uninstall_url('mod_'.$module->name)) {
             $uninstall = html_writer::link($uninstallurl, $struninstall);
         }
 
@@ -135,7 +136,7 @@
         } else {
             $visible = "<a href=\"modules.php?show=$module->name&amp;sesskey=".sesskey()."\" title=\"$strshow\">".
                        "<img src=\"" . $OUTPUT->pix_url('t/show') . "\" class=\"iconsmall\" alt=\"$strshow\" /></a>";
-            $class =   'dimmed_text';
+            $class =   ' class="dimmed_text"';
         }
         if ($module->name == "forum") {
             $uninstall = "";
@@ -145,13 +146,13 @@
         $version = get_config('mod_'.$module->name, 'version');
 
         $table->add_data(array(
-            $strmodulename,
+            '<span'.$class.'>'.$strmodulename.'</span>',
             $countlink,
-            $version,
+            '<span'.$class.'>'.$version.'</span>',
             $visible,
-            $settings,
             $uninstall,
-        ), $class);
+            $settings
+        ));
     }
 
     $table->print_html();

@@ -1150,8 +1150,7 @@ class completion_info {
                 context_course::instance($this->course->id),
                 'moodle/course:isincompletionreports', $groupid, true);
 
-        $allusernames = get_all_user_name_fields(true, 'u');
-        $sql = 'SELECT u.id, u.idnumber, ' . $allusernames;
+        $sql = 'SELECT u.id, u.firstname, u.lastname, u.idnumber';
         if ($extracontext) {
             $sql .= get_extra_user_fields_sql($extracontext, 'u', '', array('idnumber'));
         }

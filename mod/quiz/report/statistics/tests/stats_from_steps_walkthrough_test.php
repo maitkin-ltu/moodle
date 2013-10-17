@@ -40,11 +40,12 @@ require_once($CFG->dirroot . '/mod/quiz/report/reportlib.php');
  */
 class testable_quiz_statistics_report extends quiz_statistics_report {
 
-    public function get_stats($quiz, $whichattempts = QUIZ_GRADEAVERAGE, $groupstudents = array()) {
-        $qubaids = quiz_statistics_qubaids_condition($quiz->id, $groupstudents, $whichattempts);
+    public function get_stats($quiz, $useallattempts = true,
+                              $currentgroup = 0, $groupstudents = array(), $nostudentsingroup = false) {
+        $qubaids = quiz_statistics_qubaids_condition($quiz->id, $currentgroup, $groupstudents, $useallattempts);
         $this->clear_cached_data($qubaids);
         $questions = $this->load_and_initialise_questions_for_calculations($quiz);
-        return $this->get_quiz_and_questions_stats($quiz, $whichattempts, $groupstudents, $questions);
+        return $this->get_quiz_and_questions_stats($quiz, $currentgroup, $useallattempts, $groupstudents, $questions);
     }
 }
 

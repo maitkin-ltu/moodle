@@ -228,20 +228,6 @@ abstract class core_backup_progress {
     }
 
     /**
-     * Checks max value of current progress section.
-     *
-     * @return int Current max value (may be core_backup_progress::INDETERMINATE)
-     * @throws coding_exception If not in a progress section
-     */
-    public function get_current_max() {
-        $max = end($this->maxes);
-        if ($max === false) {
-            throw new coding_exception('Not inside progress section');
-        }
-        return $max;
-    }
-
-    /**
      * @return string Current progress section description
      */
     public function get_current_description() {

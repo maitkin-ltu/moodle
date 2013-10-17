@@ -564,8 +564,6 @@ class question_bank_creator_name_column extends question_bank_column_base {
                 $tempname = 'creator' . $allname;
                 if (isset($question->$tempname)) {
                     $u->$allname = $question->$tempname;
-                } else {
-                    $u->$allname = '';
                 }
             }
             echo fullname($u);
@@ -617,8 +615,6 @@ class question_bank_modifier_name_column extends question_bank_column_base {
                 $tempname = 'modifier' . $allname;
                 if (isset($question->$tempname)) {
                     $u->$allname = $question->$tempname;
-                } else {
-                    $u->$allname = '';
                 }
             }
             echo fullname($u);

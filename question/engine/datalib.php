@@ -106,7 +106,6 @@ class question_engine_data_mapper {
         $record->variant = $qa->get_variant();
         $record->maxmark = $qa->get_max_mark();
         $record->minfraction = $qa->get_min_fraction();
-        $record->maxfraction = $qa->get_max_fraction();
         $record->flagged = $qa->is_flagged();
         $record->questionsummary = $qa->get_question_summary();
         if (core_text::strlen($record->questionsummary) > question_bank::MAX_SUMMARY_LENGTH) {
@@ -260,7 +259,6 @@ SELECT
     qa.variant,
     qa.maxmark,
     qa.minfraction,
-    qa.maxfraction,
     qa.flagged,
     qa.questionsummary,
     qa.rightanswer,
@@ -320,7 +318,6 @@ SELECT
     qa.variant,
     qa.maxmark,
     qa.minfraction,
-    qa.maxfraction,
     qa.flagged,
     qa.questionsummary,
     qa.rightanswer,
@@ -380,7 +377,6 @@ ORDER BY
     qa.variant,
     qa.maxmark,
     qa.minfraction,
-    qa.maxfraction,
     qa.flagged,
     qa.questionsummary,
     qa.rightanswer,
@@ -645,7 +641,6 @@ SELECT
     qa.variant,
     qa.maxmark,
     qa.minfraction,
-    qa.maxfraction,
     qa.flagged,
     qa.questionsummary,
     qa.rightanswer,
@@ -713,7 +708,6 @@ ORDER BY
         $record->id = $qa->get_database_id();
         $record->maxmark = $qa->get_max_mark();
         $record->minfraction = $qa->get_min_fraction();
-        $record->maxfraction = $qa->get_max_fraction();
         $record->flagged = $qa->is_flagged();
         $record->questionsummary = $qa->get_question_summary();
         $record->rightanswer = $qa->get_right_answer_summary();
@@ -955,7 +949,6 @@ ORDER BY
                        {$alias}qa.variant,
                        {$alias}qa.maxmark,
                        {$alias}qa.minfraction,
-                       {$alias}qa.maxfraction,
                        {$alias}qa.flagged,
                        {$alias}qa.questionsummary,
                        {$alias}qa.rightanswer,

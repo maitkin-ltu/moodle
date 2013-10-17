@@ -32,26 +32,16 @@ class quiz_statistics_calculator {
      * Compute the quiz statistics.
      *
      * @param int   $quizid            the quiz id.
-     * @param int $whichattempts which attempts to use, represented internally as one of the constants as used in
-     *                                   $quiz->grademethod ie.
-     *                                   QUIZ_GRADEAVERAGE, QUIZ_GRADEHIGHEST, QUIZ_ATTEMPTLAST or QUIZ_ATTEMPTFIRST
-     *                                   we calculate stats based on which attempts would affect the grade for each student.
+     * @param int   $currentgroup      the current group. 0 for none.
+     * @param bool  $useallattempts    use all attempts, or just first attempts.
      * @param array $groupstudents     students in this group.
      * @param int   $p                 number of positions (slots).
      * @param float $sumofmarkvariance sum of mark variance, calculated as part of question statistics
      * @return quiz_statistics_calculated $quizstats The statistics for overall attempt scores.
      */
-    public function calculate($quizid, $whichattempts, $groupstudents, $p, $sumofmarkvariance) {
+    public function calculate($quizid, $currentgroup, $useallattempts, $groupstudents, $p, $sumofmarkvariance) {
 
-
-
-        $quizstats = new quiz_statistics_calculated($whichattempts);
-
-        $countsandaverages = $this->attempt_counts_and_averages($quizid, $groupstudents);
-
-        foreach ($countsandaverages as $propertyname => $value) {
-            $quizstats->{$propertyname} = $value;
-        }
+        $quizstats = $this->attempt_counts_and_averages($quizid, $currentgroup, $useallattempts, $groupstudents);
 
         $s = $quizstats->s();
 
@@ -61,7 +51,7 @@ class quiz_statistics_calculator {
 
         // Recalculate sql again this time possibly including test for first attempt.
         list($fromqa, $whereqa, $qaparams) =
-            quiz_statistics_attempts_sql($quizid, $groupstudents, $whichattempts);
+            quiz_statistics_attempts_sql($quizid, $currentgroup, $groupstudents, $useallattempts);
 
         $quizstats->median = $this->median($s, $fromqa, $whereqa, $qaparams);
 
@@ -90,7 +80,7 @@ class quiz_statistics_calculator {
                     }
 
                     if ($p > 1) {
-                        $quizstats->cic = (100 * $p / ($p - 1)) * (1 - ($sumofmarkvariance / $k2));
+                        $quizstats->cic = (100 * $p / ($p -1)) * (1 - ($sumofmarkvariance / $k2));
                         $quizstats->errorratio = 100 * sqrt(1 - ($quizstats->cic / 100));
                         $quizstats->standarderror = $quizstats->errorratio *
                             $quizstats->standarddeviation / 100;
@@ -100,7 +90,7 @@ class quiz_statistics_calculator {
             }
         }
 
-        $quizstats->cache(quiz_statistics_qubaids_condition($quizid, $groupstudents, $whichattempts));
+        $quizstats->cache(quiz_statistics_qubaids_condition($quizid, $currentgroup, $groupstudents, $useallattempts));
 
         return $quizstats;
     }
@@ -140,87 +130,60 @@ class quiz_statistics_calculator {
     }
 
     /**
-     * Given a particular quiz grading method return a lang string describing which attempts contribute to grade.
-     *
-     * Note internally we use the grading method constants to represent which attempts we are calculating statistics for, each
-     * grading method corresponds to different attempts for each user.
-     *
-     * @param  int $whichattempts which attempts to use, represented internally as one of the constants as used in
-     *                                   $quiz->grademethod ie.
-     *                                   QUIZ_GRADEAVERAGE, QUIZ_GRADEHIGHEST, QUIZ_ATTEMPTLAST or QUIZ_ATTEMPTFIRST
-     *                                   we calculate stats based on which attempts would affect the grade for each student.
-     * @return string the appropriate lang string to describe this option.
-     */
-    public static function using_attempts_lang_string($whichattempts) {
-         return get_string(static::using_attempts_string_id($whichattempts), 'quiz_statistics');
-    }
-
-    /**
-     * Given a particular quiz grading method return a string id for use as a field name prefix in mdl_quiz_statistics or to
-     * fetch the appropriate language string describing which attempts contribute to grade.
-     *
-     * Note internally we use the grading method constants to represent which attempts we are calculating statistics for, each
-     * grading method corresponds to different attempts for each user.
-     *
-     * @param  int $whichattempts which attempts to use, represented internally as one of the constants as used in
-     *                                   $quiz->grademethod ie.
-     *                                   QUIZ_GRADEAVERAGE, QUIZ_GRADEHIGHEST, QUIZ_ATTEMPTLAST or QUIZ_ATTEMPTFIRST
-     *                                   we calculate stats based on which attempts would affect the grade for each student.
-     * @return string the string id for this option.
-     */
-    public static function using_attempts_string_id($whichattempts) {
-        switch ($whichattempts) {
-            case QUIZ_ATTEMPTFIRST :
-                return 'firstattempts';
-            case QUIZ_GRADEHIGHEST :
-                return 'highestattempts';
-            case QUIZ_ATTEMPTLAST :
-                return 'lastattempts';
-            case QUIZ_GRADEAVERAGE :
-                return 'allattempts';
-        }
-    }
-
-    /**
      * Calculating count and mean of marks for first and ALL attempts by students.
      *
      * See : http://docs.moodle.org/dev/Quiz_item_analysis_calculations_in_practise
      *                                      #Calculating_MEAN_of_grades_for_all_attempts_by_students
      * @param int $quizid
+     * @param int $currentgroup
+     * @param bool $useallattempts
      * @param array $groupstudents
-     * @return stdClass with properties with count and avg with prefixes firstattempts, highestattempts, etc.
+     * @return quiz_statistics_calculated containing calculated counts, totals and averages.
      */
-    protected function attempt_counts_and_averages($quizid, $groupstudents) {
+    protected function attempt_counts_and_averages($quizid, $currentgroup, $useallattempts, $groupstudents) {
         global $DB;
 
-        list($fromqa, $whereqa, $qaparams) = quiz_statistics_attempts_sql($quizid, $groupstudents);
+        $quizstats = new quiz_statistics_calculated($useallattempts);
 
-        $selects = array();
-        foreach (array_keys(quiz_get_grading_options()) as $which) {
-            $fieldprefix = static::using_attempts_string_id($which);
-            $condition = quiz_report_grade_method_sql($which);
-            if ($condition == '') {
-                $case = '1';
-            } else {
-                $case = "CASE WHEN ($condition) THEN 1 ELSE 0 END";
-            }
-            $selects[] = "
-                    SUM($case) AS {$fieldprefix}count,
-                    SUM(sumgrades * $case) AS {$fieldprefix}total";
-        }
-        $select = join(',', $selects);
+        list($fromqa, $whereqa, $qaparams) = quiz_statistics_attempts_sql($quizid, $currentgroup, $groupstudents, true);
 
-        $attempttotals = $DB->get_record_sql("
-                SELECT {$select}
+        $attempttotals = $DB->get_records_sql("
+                SELECT
+                    CASE WHEN attempt = 1 THEN 1 ELSE 0 END AS isfirst,
+                    COUNT(1) AS countrecs,
+                    SUM(sumgrades) AS total
                 FROM $fromqa
-                WHERE $whereqa", $qaparams);
+                WHERE $whereqa
+                GROUP BY CASE WHEN attempt = 1 THEN 1 ELSE 0 END", $qaparams);
 
-        foreach (array_keys(quiz_get_grading_options()) as $which) {
-            $fieldprefix = static::using_attempts_string_id($which);
-            $attempttotals->{$fieldprefix.'avg'} = $attempttotals->{$fieldprefix.'total'} / $attempttotals->{$fieldprefix.'count'};
-            unset($attempttotals->{$fieldprefix.'total'});
+        // Above query that returns sums and counts for first attempt and other non first attempts.
+        // We want to work out stats for first attempt or ALL attempts.
+
+        if (isset($attempttotals[1])) {
+            $quizstats->firstattemptscount = $attempttotals[1]->countrecs;
+            $firstattemptstotal = $attempttotals[1]->total;
+        } else {
+            $quizstats->firstattemptscount = 0;
+            $firstattemptstotal = 0;
         }
-        return $attempttotals;
+
+        if (isset($attempttotals[0])) {
+            $quizstats->allattemptscount = $quizstats->firstattemptscount + $attempttotals[0]->countrecs;
+            $allattemptstotal = $firstattemptstotal + $attempttotals[0]->total;
+        } else {
+            $quizstats->allattemptscount = $quizstats->firstattemptscount;
+            $allattemptstotal = $firstattemptstotal;
+        }
+
+        if ($quizstats->allattemptscount !== 0) {
+            $quizstats->allattemptsavg = $allattemptstotal / $quizstats->allattemptscount;
+        }
+
+        if ($quizstats->firstattemptscount !== 0) {
+            $quizstats->firstattemptsavg = $firstattemptstotal / $quizstats->firstattemptscount;
+        }
+
+        return $quizstats;
     }
 
     /**

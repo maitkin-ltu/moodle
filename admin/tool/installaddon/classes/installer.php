@@ -158,8 +158,9 @@ class tool_installaddon_installer {
      */
     public function get_plugin_types_menu() {
         global $CFG;
+        require_once($CFG->libdir.'/pluginlib.php');
 
-        $pluginman = core_plugin_manager::instance();
+        $pluginman = plugin_manager::instance();
 
         $menu = array('' => get_string('choosedots'));
         foreach (array_keys($pluginman->get_plugin_types()) as $plugintype) {

@@ -48,6 +48,7 @@ if ($id !== false) {
 $PAGE->set_url($url);
 
 // set up some general variables
+$usehtmleditor = can_use_html_editor();
 
 
 if (($formdata = data_submitted()) AND !confirm_sesskey()) {

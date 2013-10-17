@@ -17,6 +17,7 @@
 require_once(dirname(dirname(__FILE__)) . '/config.php');
 require_once($CFG->dirroot . '/repository/lib.php');
 require_once($CFG->libdir . '/adminlib.php');
+require_once($CFG->libdir . '/pluginlib.php');
 
 $repository       = optional_param('repos', '', PARAM_ALPHANUMEXT);
 $action           = optional_param('action', '', PARAM_ALPHANUMEXT);
@@ -148,7 +149,7 @@ if (($action == 'edit') || ($action == 'new')) {
         }
         if ($success) {
             // configs saved
-            core_plugin_manager::reset_caches();
+            plugin_manager::reset_caches();
             redirect($baseurl);
         } else {
             print_error('instancenotsaved', 'repository', $baseurl);
@@ -189,7 +190,7 @@ if (($action == 'edit') || ($action == 'new')) {
         print_error('invalidplugin', 'repository', '', $repository);
     }
     $repositorytype->update_visibility(true);
-    core_plugin_manager::reset_caches();
+    plugin_manager::reset_caches();
     $return = true;
 } else if ($action == 'hide') {
     if (!confirm_sesskey()) {
@@ -200,7 +201,7 @@ if (($action == 'edit') || ($action == 'new')) {
         print_error('invalidplugin', 'repository', '', $repository);
     }
     $repositorytype->update_visibility(false);
-    core_plugin_manager::reset_caches();
+    plugin_manager::reset_caches();
     $return = true;
 } else if ($action == 'delete') {
     $repositorytype = repository::get_type_by_typename($repository);
@@ -211,7 +212,7 @@ if (($action == 'edit') || ($action == 'new')) {
         }
 
         if ($repositorytype->delete($downloadcontents)) {
-            core_plugin_manager::reset_caches();
+            plugin_manager::reset_caches();
             redirect($baseurl);
         } else {
             print_error('instancenotdeleted', 'repository', $baseurl);

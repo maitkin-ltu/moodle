@@ -451,6 +451,11 @@ class theme_config {
                 include_once($renderersfile);
             }
             $this->parent_configs[$parent] = $parent_config;
+            $rendererfile = $parent_config->dir.'/renderers.php';
+            if (is_readable($rendererfile)) {
+                 // may contain core and plugin renderers and renderer factory
+                include_once($rendererfile);
+            }
         }
         $libfile = $this->dir.'/lib.php';
         if (is_readable($libfile)) {
@@ -1415,10 +1420,9 @@ class theme_config {
      *
      * @param string $themename
      * @param stdClass $settings from config_plugins table
-     * @param boolean $parentscheck true to also check the parents.    .
      * @return stdClass The theme configuration
      */
-    private static function find_theme_config($themename, $settings, $parentscheck = true) {
+    private static function find_theme_config($themename, $settings) {
         // We have to use the variable name $THEME (upper case) because that
         // is what is used in theme config.php files.
 
@@ -1438,17 +1442,6 @@ class theme_config {
         if (!is_array($THEME->parents)) {
             // parents option is mandatory now
             return null;
-        } else {
-            // We use $parentscheck to only check the direct parents (avoid infinite loop).
-            if ($parentscheck) {
-                // Find all parent theme configs.
-                foreach ($THEME->parents as $parent) {
-                    $parentconfig = theme_config::find_theme_config($parent, $settings, false);
-                    if (empty($parentconfig)) {
-                        return null;
-                    }
-                }
-            }
         }
 
         return $THEME;

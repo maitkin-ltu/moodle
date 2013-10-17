@@ -66,7 +66,7 @@ function note_list($courseid=0, $userid=0, $state = '', $author = 0, $order='las
  * Retrieves a note object based on its id.
  *
  * @param int    $note_id id of the note to retrieve
- * @return stdClass object
+ * @return note object
  */
 function note_load($note_id) {
     global $DB;
@@ -79,13 +79,13 @@ function note_load($note_id) {
  * Saves a note object. The note object is passed by reference and its fields (i.e. id)
  * might change during the save.
  *
- * @param stdClass   $note object to save
+ * @param note   $note object to save
  * @return boolean true if the object was saved; false otherwise
  */
 function note_save(&$note) {
     global $USER, $DB;
 
-    // Setup & clean fields.
+    // setup & clean fields
     $note->module       = 'notes';
     $note->lastmodified = time();
     $note->usermodified = $USER->id;
@@ -95,40 +95,23 @@ function note_save(&$note) {
     if (empty($note->publishstate)) {
         $note->publishstate = NOTES_STATE_PUBLIC;
     }
-    // Save data.
+    // save data
     if (empty($note->id)) {
-        // Insert new note.
+        // insert new note
         $note->created = $note->lastmodified;
         $id = $DB->insert_record('post', $note);
         $note = note_load($id);
+        $logurl = new moodle_url('index.php', array('course'=> $note->courseid, 'user'=>$note->userid));
+        $logurl->set_anchor('note-' . $id);
 
-        // Trigger event.
-        $event = \core\event\note_created::create(array(
-            'objectid' => $note->id,
-            'courseid' => $note->courseid,
-            'relateduserid' => $note->userid,
-            'userid' => $note->usermodified,
-            'context' => context_course::instance($note->courseid),
-            'other' => array('publishstate' => $note->publishstate)
-        ));
-        $event->add_record_snapshot('post', $note);
-        $event->trigger();
+        add_to_log($note->courseid, 'notes', 'add', $logurl, 'add note');
     } else {
-        // Update old note.
+        // update old note
         $DB->update_record('post', $note);
         $note = note_load($note->id);
-
-        // Trigger event.
-        $event = \core\event\note_updated::create(array(
-            'objectid' => $note->id,
-            'courseid' => $note->courseid,
-            'relateduserid' => $note->userid,
-            'userid' => $note->usermodified,
-            'context' => context_course::instance($note->courseid),
-            'other' => array('publishstate' => $note->publishstate)
-        ));
-        $event->add_record_snapshot('post', $note);
-        $event->trigger();
+        $logurl = new moodle_url('index.php', array('course'=> $note->courseid, 'user'=>$note->userid));
+        $logurl->set_anchor('note-' . $note->id);
+        add_to_log($note->courseid, 'notes', 'update', $logurl , 'update note');
     }
     unset($note->module);
     return true;
@@ -144,23 +127,12 @@ function note_delete($note) {
     global $DB;
     if (is_int($note)) {
         $note = note_load($note);
-        debugging('Warning: providing note_delete with a note object would improve performance.', DEBUG_DEVELOPER);
+        debugging('Warning: providing note_delete with a note object would improve performance.',DEBUG_DEVELOPER);
     }
-    $return = $DB->delete_records('post', array('id' => $note->id, 'module' => 'notes'));
-
-    // Trigger event.
-    $event = \core\event\note_deleted::create(array(
-        'objectid' => $note->id,
-        'courseid' => $note->courseid,
-        'relateduserid' => $note->userid,
-        'userid' => $note->usermodified,
-        'context' => context_course::instance($note->courseid),
-        'other' => array('publishstate' => $note->publishstate)
-    ));
-    $event->add_record_snapshot('post', $note);
-    $event->trigger();
-
-    return $return;
+    $logurl = new moodle_url('index.php', array('course'=> $note->courseid, 'user'=>$note->userid));
+    $logurl->set_anchor('note-' . $note->id);
+    add_to_log($note->courseid, 'notes', 'delete', $logurl, 'delete note');
+    return $DB->delete_records('post', array('id'=>$note->id, 'module'=>'notes'));
 }
 
 /**

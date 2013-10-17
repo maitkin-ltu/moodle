@@ -74,8 +74,7 @@ class type_factory {
     public static function get_calendar_type() {
         global $CFG, $USER, $SESSION, $COURSE;
 
-        // Course calendartype can override all other settings for this page.
-        if (!empty($COURSE->id) and $COURSE->id != SITEID and !empty($COURSE->calendartype)) {
+        if (!empty($COURSE->id) and $COURSE->id != SITEID and !empty($COURSE->calendartype)) { // Course calendartype can override all other settings for this page.
             $return = $COURSE->calendartype;
         } else if (!empty($SESSION->calendartype)) { // Session calendartype can override other settings.
             $return = $SESSION->calendartype;

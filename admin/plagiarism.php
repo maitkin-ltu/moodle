@@ -29,6 +29,7 @@
 require_once(dirname(dirname(__FILE__)) . '/config.php');
 require_once($CFG->libdir.'/adminlib.php');
 require_once($CFG->libdir.'/tablelib.php');
+require_once($CFG->libdir.'/pluginlib.php');
 
 
 admin_externalpage_setup('manageplagiarismplugins');
@@ -73,7 +74,7 @@ foreach ($plagiarismplugins as $plugin => $dir) {
         }
         // uninstall link.
         $uninstall = '';
-        if ($uninstallurl = core_plugin_manager::instance()->get_uninstall_url('plagiarism_'.$plugin, 'manage')) {
+        if ($uninstallurl = plugin_manager::instance()->get_uninstall_url('plagiarism_'.$plugin)) {
             $uninstall = html_writer::link($uninstallurl, $txt->uninstall);
         }
         $table->data[] = array($displayname, $version, $uninstall, $settings);

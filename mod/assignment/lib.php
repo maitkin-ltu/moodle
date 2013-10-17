@@ -68,6 +68,8 @@ class assignment_base {
     var $strlastmodified;
     /** @var string */
     var $pagetitle;
+    /** @var bool */
+    var $usehtmleditor;
     /**
      * @todo document this var
      */

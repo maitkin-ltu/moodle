@@ -78,6 +78,7 @@ core_component::get_core_subsystems();
 
 require_once($CFG->libdir.'/adminlib.php');    // various admin-only functions
 require_once($CFG->libdir.'/upgradelib.php');  // general upgrade/install related functions
+require_once($CFG->libdir.'/pluginlib.php');   // available updates notifications
 
 $id             = optional_param('id', '', PARAM_TEXT);
 $confirmupgrade = optional_param('confirmupgrade', 0, PARAM_BOOL);
@@ -195,7 +196,7 @@ if (!core_tables_exist()) {
 
     // check plugin dependencies
     $failed = array();
-    if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed)) {
+    if (!plugin_manager::instance()->all_plugins_ok($version, $failed)) {
         $PAGE->navbar->add(get_string('pluginscheck', 'admin'));
         $PAGE->set_title($strinstallation);
         $PAGE->set_heading($strinstallation . ' - Moodle ' . $CFG->target_release);
@@ -322,7 +323,7 @@ if (!$cache and $version > $CFG->version) {  // upgrade
 
         // check plugin dependencies first
         $failed = array();
-        if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed)) {
+        if (!plugin_manager::instance()->all_plugins_ok($version, $failed)) {
             echo $output->unsatisfied_dependencies_page($version, $failed, $reloadurl);
             die();
         }
@@ -331,12 +332,12 @@ if (!$cache and $version > $CFG->version) {  // upgrade
         if ($fetchupdates) {
             // no sesskey support guaranteed here
             if (empty($CFG->disableupdatenotifications)) {
-                \core\update\checker::instance()->fetch();
+                available_update_checker::instance()->fetch();
             }
             redirect($reloadurl);
         }
 
-        $deployer = \core\update\deployer::instance();
+        $deployer = available_update_deployer::instance();
         if ($deployer->enabled()) {
             $deployer->initialize($reloadurl, $reloadurl);
 
@@ -347,7 +348,7 @@ if (!$cache and $version > $CFG->version) {  // upgrade
             }
         }
 
-        echo $output->upgrade_plugin_check_page(core_plugin_manager::instance(), \core\update\checker::instance(),
+        echo $output->upgrade_plugin_check_page(plugin_manager::instance(), available_update_checker::instance(),
                 $version, $showallplugins, $reloadurl,
                 new moodle_url('/admin/index.php', array('confirmupgrade'=>1, 'confirmrelease'=>1, 'confirmplugincheck'=>1)));
         die();
@@ -385,13 +386,13 @@ if (!$cache and moodle_needs_upgrading()) {
 
             if ($fetchupdates) {
                 // no sesskey support guaranteed here
-                \core\update\checker::instance()->fetch();
+                available_update_checker::instance()->fetch();
                 redirect($PAGE->url);
             }
 
             $output = $PAGE->get_renderer('core', 'admin');
 
-            $deployer = \core\update\deployer::instance();
+            $deployer = available_update_deployer::instance();
             if ($deployer->enabled()) {
                 $deployer->initialize($PAGE->url, $PAGE->url);
 
@@ -404,14 +405,14 @@ if (!$cache and moodle_needs_upgrading()) {
 
             // check plugin dependencies first
             $failed = array();
-            if (!core_plugin_manager::instance()->all_plugins_ok($version, $failed)) {
+            if (!plugin_manager::instance()->all_plugins_ok($version, $failed)) {
                 echo $output->unsatisfied_dependencies_page($version, $failed, $PAGE->url);
                 die();
             }
             unset($failed);
 
             // dependencies check passed, let's rock!
-            echo $output->upgrade_plugin_check_page(core_plugin_manager::instance(), \core\update\checker::instance(),
+            echo $output->upgrade_plugin_check_page(plugin_manager::instance(), available_update_checker::instance(),
                     $version, $showallplugins,
                     new moodle_url($PAGE->url),
                     new moodle_url('/admin/index.php', array('confirmplugincheck'=>1)));
@@ -513,15 +514,6 @@ if (any_new_admin_settings($adminroot)){
     redirect('upgradesettings.php');
 }
 
-// Return to original page that started the plugin uninstallation if necessary.
-if (isset($SESSION->pluginuninstallreturn)) {
-    $return = $SESSION->pluginuninstallreturn;
-    unset($SESSION->pluginuninstallreturn);
-    if ($return) {
-        redirect($return);
-    }
-}
-
 // Everything should now be set up, and the user is an admin
 
 // Print default admin page with notifications.
@@ -533,13 +525,13 @@ $dbproblems = $DB->diagnose();
 $maintenancemode = !empty($CFG->maintenance_enabled);
 
 // Available updates for Moodle core
-$updateschecker = \core\update\checker::instance();
+$updateschecker = available_update_checker::instance();
 $availableupdates = array();
 $availableupdates['core'] = $updateschecker->get_update_info('core',
     array('minmaturity' => $CFG->updateminmaturity, 'notifybuilds' => $CFG->updatenotifybuilds));
 
 // Available updates for contributed plugins
-$pluginman = core_plugin_manager::instance();
+$pluginman = plugin_manager::instance();
 foreach ($pluginman->get_plugins() as $plugintype => $plugintypeinstances) {
     foreach ($plugintypeinstances as $pluginname => $plugininfo) {
         if (!empty($plugininfo->availableupdates)) {

@@ -146,8 +146,6 @@ class grade_report_grader extends grade_report {
 
         $this->setup_groups();
 
-        $this->setup_users();
-
         $this->setup_sortitemid();
     }
 
@@ -400,8 +398,6 @@ class grade_report_grader extends grade_report {
             return;
         }
 
-        $this->setup_users();
-
         // Limit to users with a gradeable role.
         list($gradebookrolessql, $gradebookrolesparams) = $DB->get_in_or_equal(explode(',', $this->gradebookroles), SQL_PARAMS_NAMED, 'grbr0');
 
@@ -439,7 +435,7 @@ class grade_report_grader extends grade_report {
                     break;
             }
 
-            $params = array_merge($gradebookrolesparams, $this->userwheresql_params, $this->groupwheresql_params, $enrolledparams, $relatedctxparams);
+            $params = array_merge($gradebookrolesparams, $this->groupwheresql_params, $enrolledparams, $relatedctxparams);
         }
 
         $sql = "SELECT $userfields
@@ -454,7 +450,6 @@ class grade_report_grader extends grade_report {
                               AND ra.contextid $relatedctxsql
                        ) rainner ON rainner.userid = u.id
                    AND u.deleted = 0
-                   $this->userwheresql
                    $this->groupwheresql
               ORDER BY $sort";
         $studentsperpage = $this->get_students_per_page();
@@ -518,6 +513,7 @@ class grade_report_grader extends grade_report {
 
         $userids = array_keys($this->users);
 
+
         if ($grades = $DB->get_records_sql($sql, $params)) {
             foreach ($grades as $graderec) {
                 if (in_array($graderec->userid, $userids) and array_key_exists($graderec->itemid, $this->gtree->get_items())) { // some items may not be present!!
@@ -559,10 +555,9 @@ class grade_report_grader extends grade_report {
      * This consists of student names and icons, links to user reports and id numbers, as well
      * as header cells for these columns. It also includes the fillers required for the
      * categories displayed on the right side of the report.
-     * @param boolean $displayaverages whether to display average rows in the table  
      * @return array Array of html_table_row objects
      */
-    public function get_left_rows($displayaverages) {
+    public function get_left_rows() {
         global $CFG, $USER, $OUTPUT;
 
         $rows = array();
@@ -679,20 +674,17 @@ class grade_report_grader extends grade_report {
         }
 
         $rows = $this->get_left_range_row($rows, $colspan);
-        if ($displayaverages) {
-            $rows = $this->get_left_avg_row($rows, $colspan, true);
-            $rows = $this->get_left_avg_row($rows, $colspan);
-        }
+        $rows = $this->get_left_avg_row($rows, $colspan, true);
+        $rows = $this->get_left_avg_row($rows, $colspan);
 
         return $rows;
     }
 
     /**
      * Builds and returns the rows that will make up the right part of the grader report
-     * @param boolean $displayaverages whether to display average rows in the table 
      * @return array Array of html_table_row objects
      */
-    public function get_right_rows($displayaverages) {
+    public function get_right_rows() {
         global $CFG, $USER, $OUTPUT, $DB, $PAGE;
 
         $rows = array();
@@ -1068,10 +1060,8 @@ class grade_report_grader extends grade_report {
         $PAGE->requires->strings_for_js(array('ajaxchoosescale','ajaxclicktoclose','ajaxerror','ajaxfailedupdate', 'ajaxfieldchanged'), 'gradereport_grader');
 
         $rows = $this->get_right_range_row($rows);
-        if ($displayaverages) {
-            $rows = $this->get_right_avg_row($rows, true);
-            $rows = $this->get_right_avg_row($rows);
-        }
+        $rows = $this->get_right_avg_row($rows, true);
+        $rows = $this->get_right_avg_row($rows);
 
         return $rows;
     }
@@ -1080,15 +1070,14 @@ class grade_report_grader extends grade_report {
      * Depending on the style of report (fixedstudents vs traditional one-table),
      * arranges the rows of data in one or two tables, and returns the output of
      * these tables in HTML
-     * @param boolean $displayaverages whether to display average rows in the table 
      * @return string HTML
      */
-    public function get_grade_table($displayaverages = false) {
+    public function get_grade_table() {
         global $OUTPUT;
         $fixedstudents = $this->is_fixed_students();
 
-        $leftrows = $this->get_left_rows($displayaverages);
-        $rightrows = $this->get_right_rows($displayaverages);
+        $leftrows = $this->get_left_rows();
+        $rightrows = $this->get_right_rows();
 
         $html = '';
 

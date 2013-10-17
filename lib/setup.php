@@ -372,7 +372,9 @@ if (defined('ABORT_AFTER_CONFIG')) {
 // Early profiling start, based exclusively on config.php $CFG settings
 if (!empty($CFG->earlyprofilingenabled)) {
     require_once($CFG->libdir . '/xhprof/xhprof_moodle.php');
-    profiling_start();
+    if (profiling_start()) {
+        register_shutdown_function('profiling_stop');
+    }
 }
 
 /**
@@ -620,9 +622,6 @@ if (!isset($CFG->debugdisplay)) {
     ini_set('display_errors', '1');
 }
 
-// Register our shutdown manager, do NOT use register_shutdown_function().
-core_shutdown_manager::initialize();
-
 // Verify upgrade is not running unless we are in a script that needs to execute in any case
 if (!defined('NO_UPGRADE_CHECK') and isset($CFG->upgraderunning)) {
     if ($CFG->upgraderunning < time()) {
@@ -641,6 +640,11 @@ if (!empty($CFG->logsql)) {
 // it helps a lot when using large complex OOP structures such as in amos or gradebook
 if (function_exists('gc_enable')) {
     gc_enable();
+}
+
+// Register default shutdown tasks - such as Apache memory release helper, perf logging, etc.
+if (function_exists('register_shutdown_function')) {
+    register_shutdown_function('moodle_request_shutdown');
 }
 
 // detect unsupported upgrade jump as soon as possible - do not change anything, do not use system functions
@@ -769,7 +773,9 @@ if (!PHPUNIT_TEST and !defined('BEHAT_TEST')) {
 // Late profiling, only happening if early one wasn't started
 if (!empty($CFG->profilingenabled)) {
     require_once($CFG->libdir . '/xhprof/xhprof_moodle.php');
-    profiling_start();
+    if (profiling_start()) {
+        register_shutdown_function('profiling_stop');
+    }
 }
 
 // Process theme change in the URL.

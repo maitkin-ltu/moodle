@@ -28,7 +28,6 @@ $id         = required_param('id', PARAM_INT); // course id
 $action     = optional_param('action', '', PARAM_ALPHANUMEXT);
 $instanceid = optional_param('instance', 0, PARAM_INT);
 $confirm    = optional_param('confirm', 0, PARAM_BOOL);
-$confirm2   = optional_param('confirm2', 0, PARAM_BOOL);
 
 $course = $DB->get_record('course', array('id'=>$id), '*', MUST_EXIST);
 $context = context_course::instance($course->id, MUST_EXIST);
@@ -97,17 +96,6 @@ if ($canconfig and $action and confirm_sesskey()) {
             $plugin = $plugins[$instance->enrol];
 
             if ($confirm) {
-                if (enrol_accessing_via_instance($instance)) {
-                    if (!$confirm2) {
-                        $yesurl = new moodle_url('/enrol/instances.php', array('id'=>$course->id, 'action'=>'delete', 'instance'=>$instance->id, 'confirm'=>1, 'confirm2'=>1, 'sesskey'=>sesskey()));
-                        $displayname = $plugin->get_instance_name($instance);
-                        $message = markdown_to_html(get_string('deleteinstanceconfirmself', 'enrol', array('name'=>$displayname)));
-                        echo $OUTPUT->header();
-                        echo $OUTPUT->confirm($message, $yesurl, $PAGE->url);
-                        echo $OUTPUT->footer();
-                        die();
-                    }
-                }
                 $plugin->delete_instance($instance);
                 redirect($PAGE->url);
             }
@@ -129,17 +117,6 @@ if ($canconfig and $action and confirm_sesskey()) {
             $instance = $instances[$instanceid];
             $plugin = $plugins[$instance->enrol];
             if ($instance->status != ENROL_INSTANCE_DISABLED) {
-                if (enrol_accessing_via_instance($instance)) {
-                    if (!$confirm2) {
-                        $yesurl = new moodle_url('/enrol/instances.php', array('id'=>$course->id, 'action'=>'disable', 'instance'=>$instance->id, 'confirm2'=>1, 'sesskey'=>sesskey()));
-                        $displayname = $plugin->get_instance_name($instance);
-                        $message = markdown_to_html(get_string('disableinstanceconfirmself', 'enrol', array('name'=>$displayname)));
-                        echo $OUTPUT->header();
-                        echo $OUTPUT->confirm($message, $yesurl, $PAGE->url);
-                        echo $OUTPUT->footer();
-                        die();
-                    }
-                }
                 $plugin->update_status($instance, ENROL_INSTANCE_DISABLED);
                 redirect($PAGE->url);
             }

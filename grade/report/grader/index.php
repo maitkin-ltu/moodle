@@ -22,11 +22,10 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-require_once('../../../config.php');
-require_once($CFG->libdir.'/gradelib.php');
-require_once($CFG->dirroot.'/grade/lib.php');
-require_once($CFG->dirroot.'/grade/report/grader/lib.php');
-require_once($CFG->dirroot.'/user/renderer.php');
+require_once '../../../config.php';
+require_once $CFG->libdir.'/gradelib.php';
+require_once $CFG->dirroot.'/grade/lib.php';
+require_once $CFG->dirroot.'/grade/report/grader/lib.php';
 
 $courseid      = required_param('id', PARAM_INT);        // course id
 $page          = optional_param('page', 0, PARAM_INT);   // active page
@@ -37,18 +36,8 @@ $action        = optional_param('action', 0, PARAM_ALPHAEXT);
 $move          = optional_param('move', 0, PARAM_INT);
 $type          = optional_param('type', 0, PARAM_ALPHA);
 $target        = optional_param('target', 0, PARAM_ALPHANUM);
-$toggle        = optional_param('toggle', null, PARAM_INT);
+$toggle        = optional_param('toggle', NULL, PARAM_INT);
 $toggle_type   = optional_param('toggle_type', 0, PARAM_ALPHANUM);
-$graderreportsifirst  = optional_param('sifirst', null, PARAM_ALPHA);
-$graderreportsilast   = optional_param('silast', null, PARAM_ALPHA);
-
-// The report object is recreated each time, save search information to SESSION object for future use.
-if (isset($graderreportsifirst)) {
-    $SESSION->gradereport['filterfirstname'] = $graderreportsifirst;
-}
-if (isset($graderreportsilast)) {
-    $SESSION->gradereport['filtersurname'] = $graderreportsilast;
-}
 
 $PAGE->set_url(new moodle_url('/grade/report/grader/index.php', array('id'=>$courseid)));
 
@@ -129,7 +118,6 @@ print_grade_page_head($COURSE->id, 'report', 'grader', $reportname, false, $butt
 //Initialise the grader report object that produces the table
 //the class grade_report_grader_ajax was removed as part of MDL-21562
 $report = new grade_report_grader($courseid, $gpr, $context, $page, $sortitemid);
-$numusers = $report->get_numusers();
 
 // make sure separate group does not prevent view
 if ($report->currentgroup == -2) {
@@ -147,17 +135,11 @@ if ($data = data_submitted() and confirm_sesskey() and has_capability('moodle/gr
 
 // final grades MUST be loaded after the processing
 $report->load_users();
+$numusers = $report->get_numusers();
 $report->load_final_grades();
 
 echo $report->group_selector;
-
-// User search.
-$url = new moodle_url('/grade/report/grader/index.php', array('id' => $course->id));
-$firstinitial = isset($SESSION->gradereport['filterfirstname']) ? $SESSION->gradereport['filterfirstname'] : '';
-$lastinitial  = isset($SESSION->gradereport['filtersurname']) ? $SESSION->gradereport['filtersurname'] : '';
-$totalusers = $report->get_numusers(true, false);
-$renderer = $PAGE->get_renderer('core_user');
-echo $renderer->user_search($url, $firstinitial, $lastinitial, $numusers, $totalusers, $report->currentgroupname);
+echo '<div class="clearer"></div>';
 
 //show warnings if any
 foreach($warnings as $warning) {
@@ -170,11 +152,7 @@ if (!empty($studentsperpage)) {
     echo $OUTPUT->paging_bar($numusers, $report->page, $studentsperpage, $report->pbarurl);
 }
 
-$displayaverages = true;
-if ($numusers == 0) {
-    $displayaverages = false;
-}
-$reporthtml = $report->get_grade_table($displayaverages);
+$reporthtml = $report->get_grade_table();
 
 // print submit button
 if ($USER->gradeediting[$course->id] && ($report->get_pref('showquickfeedback') || $report->get_pref('quickgrading'))) {

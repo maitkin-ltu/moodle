@@ -69,7 +69,11 @@ class data_field_textarea extends data_field_base {
             $text = file_prepare_draft_area($draftitemid, $this->context->id, 'mod_data', 'content', $content->id, $options, $text);
         } else {
             $draftitemid = file_get_unused_draft_itemid();
-            $format = FORMAT_HTML;
+            if (can_use_html_editor()) {
+                $format = FORMAT_HTML;
+            } else {
+                $format = FORMAT_PLAIN;
+            }
         }
 
         // get filepicker info

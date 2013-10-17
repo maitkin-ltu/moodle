@@ -16,7 +16,8 @@
 
 /**
  * Displays external information about a course
- * @package    core_course
+ * @package    core
+ * @category   course
  * @copyright  1999 onwards Martin Dougiamas  http://dougiamas.com
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -86,7 +87,7 @@ if (empty($searchcriteria)) {
     $PAGE->set_title("$site->fullname : $strsearchresults");
     // Link to manage search results should be visible if user have system or category level capability
     if ((can_edit_in_category() || !empty($usercatlist))) {
-        $aurl = new moodle_url('/course/management.php', $searchcriteria);
+        $aurl = new moodle_url('/course/manage.php', $searchcriteria);
         $searchform = $OUTPUT->single_button($aurl, get_string('managecourses'), 'get');
     } else {
         $searchform = $courserenderer->course_search_form($search, 'navbar');
